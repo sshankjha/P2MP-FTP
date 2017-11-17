@@ -46,6 +46,7 @@ public class Server {
 			DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
 			serverSocket.send(sendPacket);
 			FileUtil.saveToFile(sentence, fileToWrite);
+
 		}
 	}
 }

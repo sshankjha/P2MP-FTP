@@ -31,7 +31,7 @@ public class Client {
 		this.serverPort = serverPort;
 		this.serverIpList = serverIpList;
 		try {
-			clientSocket = new DatagramSocket(9876);
+			clientSocket = new DatagramSocket(0);
 		} catch (SocketException e) {
 			logger.error("Error starting server");
 			logger.error(e);

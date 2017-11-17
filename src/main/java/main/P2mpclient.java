@@ -35,7 +35,7 @@ public class P2mpclient {
 		//Parsing command line arguments - End
 
 		try {
-			client = new Client(fileName, mss, serverPort, serverIpList);
+			client = new Client(fileName, serverPort, mss, serverIpList);
 			client.rdtSend();
 		} catch (SocketException e) {
 			logger.error(e);
