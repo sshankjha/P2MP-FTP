@@ -11,7 +11,7 @@ import util.Constants;
 
 public class Client {
 	final static Logger logger = Logger.getLogger(Client.class);
-	private DatagramSocket serverSocket;
+	private DatagramSocket clientSocket;
 	private byte[] sendData;
 	private String fileName;
 	private int mss;
@@ -31,7 +31,7 @@ public class Client {
 		this.serverPort = serverPort;
 		this.serverIpList = serverIpList;
 		try {
-			serverSocket = new DatagramSocket(9876);
+			clientSocket = new DatagramSocket(9876);
 		} catch (SocketException e) {
 			logger.error("Error starting server");
 			logger.error(e);
@@ -40,11 +40,11 @@ public class Client {
 	}
 
 	public void rdtSend() {
-		byte[] data = new byte[10];
+		byte[] data = "Hello".getBytes();
 		for (String serverIp : serverIpList) {
 			Thread t;
 			try {
-				t = new Thread(new SenderThread(serverPort, serverIp, serverSocket, data));
+				t = new Thread(new SenderThread(serverPort, serverIp, clientSocket, data));
 				t.start();
 			} catch (UnknownHostException e) {
 				// TODO Auto-generated catch block
