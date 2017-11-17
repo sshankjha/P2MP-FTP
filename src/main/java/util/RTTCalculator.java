@@ -5,12 +5,17 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 public class RTTCalculator {
+
+	Logger logger = Logger.getLogger(this.getClass());
 
 	/**
 	 * Calculates RTT for all the receivers and returns the value in ms.
 	 * 
-	 * @param receivers array of hostnames
+	 * @param receivers
+	 *            array of hostnames
 	 * @return maximum RTT among all the RTTs
 	 */
 	public long getRTT(String[] receivers) {
@@ -24,13 +29,18 @@ public class RTTCalculator {
 					long startTime = System.currentTimeMillis();
 					if (inetAddress.isReachable(1000)) {
 						totalTime += System.currentTimeMillis() - startTime;
+					} else {
+						logger.info(receiver + " not reachable.");
 					}
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
 			}
-			rttForAllReceivers.add(totalTime / 3);
+			logger.info("Average RTT for " + receiver + ": " + totalTime / countForPing + " ms");
+			rttForAllReceivers.add(totalTime / countForPing);
 		}
-		return Collections.max(rttForAllReceivers);
+		long maxRTT = Collections.max(rttForAllReceivers);
+		logger.info("Returning max RTT: " + maxRTT + " ms");
+		return maxRTT;
 	}
 }
