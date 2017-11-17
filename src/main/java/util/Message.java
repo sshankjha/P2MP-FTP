@@ -25,12 +25,16 @@ public class Message {
 
 	}
 
-	public Message(int seqNum, short checksum, short type, byte[] data) {
+	public Message(int seqNum, short type, byte[] data) {
 		super();
 		this.seqNum = seqNum;
-		this.checksum = checksum;
 		this.type = type;
 		this.data = data;
+	}
+
+	private short calculateChecksum() {
+		//Todo calculate checksum over rest of the fields maybe pass other parameters in byte
+		return (short) 123;
 	}
 
 	public int getSeqNum() {
@@ -57,6 +61,7 @@ public class Message {
 		byte[] typeBytes = ByteBuffer.allocate(2).putShort(type).array();
 		System.arraycopy(typeBytes, 0, result, 4, 2);
 
+		this.checksum = calculateChecksum();
 		byte[] checksumBytes = ByteBuffer.allocate(2).putShort(checksum).array();
 		System.arraycopy(checksumBytes, 0, result, 6, 2);
 

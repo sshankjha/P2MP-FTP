@@ -8,6 +8,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import util.Constants;
+import util.Message;
 
 public class Client {
 	final static Logger logger = Logger.getLogger(Client.class);
@@ -39,12 +40,12 @@ public class Client {
 		}
 	}
 
-	public void rdtSend() {
-		byte[] data = "Hello".getBytes();
+	public void rdtSend(byte[] dataToSend) {
+		Message mssg = new Message(100, (short) 1, dataToSend);
 		for (String serverIp : serverIpList) {
 			Thread t;
 			try {
-				t = new Thread(new SenderThread(serverPort, serverIp, clientSocket, data));
+				t = new Thread(new SenderThread(serverPort, serverIp, clientSocket, mssg.getBytes()));
 				t.start();
 			} catch (UnknownHostException e) {
 				// TODO Auto-generated catch block

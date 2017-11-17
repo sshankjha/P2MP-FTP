@@ -36,7 +36,7 @@ public class P2mpclient {
 
 		try {
 			client = new Client(fileName, serverPort, mss, serverIpList);
-			client.rdtSend();
+			client.rdtSend("hello".getBytes());
 		} catch (SocketException e) {
 			logger.error(e);
 		}

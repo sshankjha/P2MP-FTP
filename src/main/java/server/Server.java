@@ -1,51 +1,58 @@
 package server;
 
+import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.SocketException;
 import java.util.Random;
 
 import org.apache.log4j.Logger;
 
-import util.FileUtil;
+import util.Message;
 
 public class Server {
 
 	static Logger logger = Logger.getLogger(Server.class);
+	private int serverPort;
+	private float inputProbability;
+	private DatagramSocket serverSocket;
+	private byte[] receiveData = new byte[1024];
+	private String fileToWrite;
 
-	public static void main(String args[]) throws Exception {
-		if (args.length != 3) {
-			logger.info("Incorrect number of arguments. Please check and try again");
-			System.exit(1);
-		}
-		int serverPort = Integer.valueOf(args[0]);
-		String fileToWrite = args[1];
-		float inputProbability = Float.valueOf(args[2]);
-		if (inputProbability > 1 || inputProbability < 0) {
-			logger.info("Probability should be between 0 and 1. Exiting.");
-			System.exit(1);
-		}
-		float randomNumber= new Random().nextFloat();
-		
-		DatagramSocket serverSocket = new DatagramSocket(serverPort);
-		byte[] receiveData = new byte[1024];
-		byte[] sendData = new byte[1024];
+	public Server(int serverPort, float inputProbability, String fileToWrite) throws SocketException {
+		super();
+		this.serverPort = serverPort;
+		this.inputProbability = inputProbability;
+		this.fileToWrite = fileToWrite;
+		serverSocket = new DatagramSocket(serverPort);
+	}
+
+	public void listen() throws IOException {
+		float randomNumber;
 		while (true) {
 			DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-			serverSocket.receive(receivePacket);
-			String sentence = new String(receivePacket.getData());
-			logger.info("RECEIVED: " + sentence);
+			try {
+				serverSocket.receive(receivePacket);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				logger.error(e);
+				throw e;
+			}
+			Message recvMessage = new Message(receivePacket.getData());
+			logger.info("RECEIVED: " + new String(recvMessage.getData()));
+			randomNumber = new Random().nextFloat();
 			if (randomNumber <= inputProbability) {
 				logger.info("Packet dropped.");
 				continue;
 			}
 			InetAddress IPAddress = receivePacket.getAddress();
 			int port = receivePacket.getPort();
-			String capitalizedSentence = sentence.toUpperCase();
-			sendData = capitalizedSentence.getBytes();
-			DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
-			serverSocket.send(sendPacket);
-			FileUtil.saveToFile(sentence, fileToWrite);
+			//String capitalizedSentence = sentence.toUpperCase();
+			//sendData = capitalizedSentence.getBytes();
+			//DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
+			//serverSocket.send(sendPacket);
+			//FileUtil.saveToFile(sentence, fileToWrite);
 
 		}
 	}

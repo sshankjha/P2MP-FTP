@@ -7,7 +7,7 @@ public class MessageTest {
 
 	@Test
 	public void testMessageEncoding() {
-		Message mssg = new Message(678, (short) 123, (short) 3, "Hello".getBytes());
+		Message mssg = new Message(678, (short) 3, "Hello".getBytes());
 		byte[] mssgBytes = mssg.getBytes();
 		Message decodedMessage = new Message(mssgBytes);
 		Assert.assertEquals(678, decodedMessage.getSeqNum());
