@@ -80,22 +80,9 @@ public class Client {
 				t = new Thread(new SenderThread(serverPort, serverIp, clientSocket, mssg.getBytes()));
 				t.start();
 			} catch (UnknownHostException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				logger.info(e);
 			}
 		}
 	}
 
-	//		while (true) {
-	//			DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-	//			serverSocket.receive(receivePacket);
-	//			String sentence = new String(receivePacket.getData());
-	//			System.out.println("RECEIVED: " + sentence);
-	//			InetAddress IPAddress = receivePacket.getAddress();
-	//			int port = receivePacket.getPort();
-	//			String capitalizedSentence = sentence.toUpperCase();
-	//			sendData = capitalizedSentence.getBytes();
-	//			DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
-	//			serverSocket.send(sendPacket);
-	//	}
 }
