@@ -28,7 +28,11 @@ public class Client {
 
 	public Client(String fileName, int serverPort, int mss, List<String> serverIpList) throws SocketException {
 		this.fileName = fileName;
+		if (mss < 0 || mss > 1500) {
+			throw new IllegalStateException("Incorrect value for MSS");
+		}
 		this.mss = mss;
+		this.sendData = new byte[mss];
 		this.serverPort = serverPort;
 		this.serverIpList = serverIpList;
 		try {
@@ -41,15 +45,28 @@ public class Client {
 	}
 
 	public void rdtSend(byte[] dataToSend) {
-		Message mssg = new Message(100, (short) 1, dataToSend);
-		for (String serverIp : serverIpList) {
-			Thread t;
-			try {
-				t = new Thread(new SenderThread(serverPort, serverIp, clientSocket, mssg.getBytes()));
-				t.start();
-			} catch (UnknownHostException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+		//Add logic for filling the buffer and send it.
+		int length = dataToSend.length;
+		while (length > 0) {
+			int space = mss - sendData.length;
+			int dataSentSize = Math.min(length, space);
+			System.arraycopy(dataToSend, 0, sendData, sendData.length, dataSentSize);
+			length = length - dataSentSize;
+
+			if (sendData.length == mss) {
+				Message mssg = new Message(100, (short) 1, dataToSend);
+				for (String serverIp : serverIpList) {
+					Thread t;
+					try {
+						t = new Thread(new SenderThread(serverPort, serverIp, clientSocket, mssg.getBytes()));
+						t.start();
+					} catch (UnknownHostException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+				//need to optimize this
+				sendData = new byte[mss];
 			}
 		}
 
