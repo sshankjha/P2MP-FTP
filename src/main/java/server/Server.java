@@ -9,6 +9,7 @@ import java.util.Random;
 
 import org.apache.log4j.Logger;
 
+import util.Acknowledge;
 import util.Message;
 
 public class Server {
@@ -35,25 +36,37 @@ public class Server {
 			try {
 				serverSocket.receive(receivePacket);
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				logger.error(e);
 				throw e;
 			}
 			Message recvMessage = new Message(receivePacket.getData());
-			logger.info("RECEIVED: " + new String(recvMessage.getData()));
+			int seqNumber = recvMessage.getSeqNum();
 			randomNumber = new Random().nextFloat();
 			if (randomNumber <= inputProbability) {
-				logger.info("Packet dropped.");
+				logger.info("Packet " + seqNumber + " dropped.");
 				continue;
+			} else {
+				logger.info("Packet " + seqNumber + " received.");
 			}
-			InetAddress IPAddress = receivePacket.getAddress();
-			int port = receivePacket.getPort();
-			//String capitalizedSentence = sentence.toUpperCase();
-			//sendData = capitalizedSentence.getBytes();
-			//DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
-			//serverSocket.send(sendPacket);
-			//FileUtil.saveToFile(sentence, fileToWrite);
+			InetAddress senderIP = receivePacket.getAddress();
+			int senderPort = receivePacket.getPort();
+			boolean isAckSent = sendAck(senderIP, senderPort, seqNumber);
+			if (isAckSent) {
+				logger.info("Ack for packet " + seqNumber + "sent");
+			}
+			// FileUtil.saveToFile(sentence, fileToWrite);
+		}
+	}
 
+	private boolean sendAck(InetAddress senderIP, int senderPort, int seqNumber) {
+		Acknowledge ack = new Acknowledge(seqNumber);
+		DatagramPacket ackPacket = new DatagramPacket(ack.getBytes(), ack.getBytes().length, senderIP, senderPort);
+		try {
+			serverSocket.send(ackPacket);
+			return true;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
 		}
 	}
 }
