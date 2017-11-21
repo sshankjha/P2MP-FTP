@@ -14,6 +14,7 @@ public class Client {
 	final static Logger logger = Logger.getLogger(Client.class);
 	private DatagramSocket clientSocket;
 	private byte[] sendData;
+	int sendDataIndex = 0;
 	private String fileName;
 	private int mss;
 	private int serverPort;
@@ -47,29 +48,42 @@ public class Client {
 	public void rdtSend(byte[] dataToSend) {
 		//Add logic for filling the buffer and send it.
 		int length = dataToSend.length;
-		while (length > 0) {
-			int space = mss - sendData.length;
-			int dataSentSize = Math.min(length, space);
-			System.arraycopy(dataToSend, 0, sendData, sendData.length, dataSentSize);
-			length = length - dataSentSize;
+		int space;
+		int dataSentSize;
+		int sendIndex = 0;
 
-			if (sendData.length == mss) {
-				Message mssg = new Message(100, (short) 1, dataToSend);
-				for (String serverIp : serverIpList) {
-					Thread t;
-					try {
-						t = new Thread(new SenderThread(serverPort, serverIp, clientSocket, mssg.getBytes()));
-						t.start();
-					} catch (UnknownHostException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				}
+		while (length > 0) {
+
+			space = mss - sendDataIndex;
+			dataSentSize = Math.min(length, space);
+
+			System.arraycopy(dataToSend, sendIndex, sendData, sendDataIndex, dataSentSize);
+
+			sendDataIndex += dataSentSize;
+			sendIndex += dataSentSize;
+			length = length - dataSentSize;
+			//TODO Remove true
+			if (sendDataIndex == mss || true) {
+				sendMessageToAll(sendData);
 				//need to optimize this
-				sendData = new byte[mss];
+				sendDataIndex = 0;
 			}
 		}
 
+	}
+
+	public void sendMessageToAll(byte[] data) {
+		Message mssg = new Message(100, (short) 1, data);
+		for (String serverIp : serverIpList) {
+			Thread t;
+			try {
+				t = new Thread(new SenderThread(serverPort, serverIp, clientSocket, mssg.getBytes()));
+				t.start();
+			} catch (UnknownHostException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 	}
 
 	//		while (true) {
