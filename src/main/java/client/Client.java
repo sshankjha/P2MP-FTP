@@ -51,8 +51,10 @@ public class Client {
 
 	//Close the socket and send the remaining data
 	public void close() {
-		logger.info("Calling connection.close( )");
-		byte[] data = Arrays.copyOfRange(sendData, 0, sendDataIndex);
+		logger.info("Calling connection.close( )" + sendDataIndex);
+		byte[] data = new byte[sendDataIndex];
+		System.arraycopy(sendData, 0, data, 0, sendDataIndex);
+		logger.info("Calling connection.close( )" + new String(data));
 		sendMessageToAll(data, new ArrayList<String>(), Constants.LAST);
 		try {
 			clientSocket.close();

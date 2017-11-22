@@ -20,7 +20,7 @@ public class Server {
 	private int serverPort;
 	private float inputProbability;
 	private DatagramSocket serverSocket;
-	private byte[] receiveData = new byte[1024];
+	private byte[] receiveData;
 	private String fileToWrite;
 
 	public Server(int serverPort, float inputProbability, String fileToWrite) throws SocketException {
@@ -38,6 +38,7 @@ public class Server {
 
 			while (true) {
 				logger.info("Waiting to receive a packet");
+				receiveData = new byte[1500];
 				DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
 				try {
 					serverSocket.receive(receivePacket);
