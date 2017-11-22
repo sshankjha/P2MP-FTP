@@ -51,6 +51,7 @@ public class Client {
 
 	//Close the socket and send the remaining data
 	public void close() {
+		logger.info("Calling connection.close( )");
 		byte[] data = Arrays.copyOfRange(sendData, 0, sendDataIndex);
 		sendMessageToAll(data, new ArrayList<String>(), Constants.LAST);
 		try {
@@ -61,7 +62,6 @@ public class Client {
 	}
 
 	public void rdtSend(byte[] dataToSend) {
-		logger.info("rdtSend() called with size " + dataToSend.length);
 		//Add logic for filling the buffer and send it.
 		int length = dataToSend.length;
 		int space;
@@ -69,7 +69,6 @@ public class Client {
 		int sendIndex = 0;
 
 		while (length > 0) {
-			logger.info("rdtSend() length " + length);
 			space = mss - sendDataIndex;
 			dataSentSize = Math.min(length, space);
 
@@ -78,8 +77,7 @@ public class Client {
 			sendDataIndex += dataSentSize;
 			sendIndex += dataSentSize;
 			length = length - dataSentSize;
-			//TODO Remove true
-			if (sendDataIndex == mss || true) {
+			if (sendDataIndex == mss) {
 				sendMessageToAll(sendData, new ArrayList<String>(), Constants.DATA);
 				ackNum++;
 				//need to optimize this

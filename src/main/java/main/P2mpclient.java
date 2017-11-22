@@ -53,8 +53,8 @@ public class P2mpclient {
 			} catch (IOException e1) {
 				logger.info(e1);
 			}
+			client.close();
 			//Reading the file contents and sending it - End
-			//Have something like client.close()
 			//client.rdtSend("hello".getBytes());
 		} catch (SocketException e) {
 			logger.error(e);

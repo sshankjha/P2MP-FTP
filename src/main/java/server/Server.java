@@ -65,6 +65,9 @@ public class Server {
 				if (isAckSent) {
 					logger.info("Ack for packet " + seqNumber + " sent");
 				}
+				if (recvMessage.getType() == Constants.LAST) {
+					break;
+				}
 				// FileUtil.saveToFile(sentence, fileToWrite);
 			}
 
