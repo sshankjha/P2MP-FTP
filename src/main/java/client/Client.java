@@ -14,6 +14,7 @@ public class Client {
 	final static Logger logger = Logger.getLogger(Client.class);
 	private DatagramSocket clientSocket;
 	private byte[] sendData;
+	int sendDataIndex = 0;
 	private String fileName;
 	private int mss;
 	private int serverPort;
@@ -28,7 +29,11 @@ public class Client {
 
 	public Client(String fileName, int serverPort, int mss, List<String> serverIpList) throws SocketException {
 		this.fileName = fileName;
+		if (mss < 0 || mss > 1500) {
+			throw new IllegalStateException("Incorrect value for MSS");
+		}
 		this.mss = mss;
+		this.sendData = new byte[mss];
 		this.serverPort = serverPort;
 		this.serverIpList = serverIpList;
 		try {
@@ -41,30 +46,43 @@ public class Client {
 	}
 
 	public void rdtSend(byte[] dataToSend) {
-		Message mssg = new Message(100, (short) 1, dataToSend);
+		//Add logic for filling the buffer and send it.
+		int length = dataToSend.length;
+		int space;
+		int dataSentSize;
+		int sendIndex = 0;
+
+		while (length > 0) {
+
+			space = mss - sendDataIndex;
+			dataSentSize = Math.min(length, space);
+
+			System.arraycopy(dataToSend, sendIndex, sendData, sendDataIndex, dataSentSize);
+
+			sendDataIndex += dataSentSize;
+			sendIndex += dataSentSize;
+			length = length - dataSentSize;
+			//TODO Remove true
+			if (sendDataIndex == mss || true) {
+				sendMessageToAll(sendData);
+				//need to optimize this
+				sendDataIndex = 0;
+			}
+		}
+
+	}
+
+	public void sendMessageToAll(byte[] data) {
+		Message mssg = new Message(100, (short) 1, data);
 		for (String serverIp : serverIpList) {
 			Thread t;
 			try {
 				t = new Thread(new SenderThread(serverPort, serverIp, clientSocket, mssg.getBytes()));
 				t.start();
 			} catch (UnknownHostException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				logger.info(e);
 			}
 		}
-
 	}
 
-	//		while (true) {
-	//			DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-	//			serverSocket.receive(receivePacket);
-	//			String sentence = new String(receivePacket.getData());
-	//			System.out.println("RECEIVED: " + sentence);
-	//			InetAddress IPAddress = receivePacket.getAddress();
-	//			int port = receivePacket.getPort();
-	//			String capitalizedSentence = sentence.toUpperCase();
-	//			sendData = capitalizedSentence.getBytes();
-	//			DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
-	//			serverSocket.send(sendPacket);
-	//	}
 }
