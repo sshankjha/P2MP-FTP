@@ -1,8 +1,12 @@
 package client;
 
+import java.io.IOException;
+import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.log4j.Logger;
@@ -45,7 +49,19 @@ public class Client {
 		}
 	}
 
+	//Close the socket and send the remaining data
+	public void close() {
+		byte[] data = Arrays.copyOfRange(sendData, 0, sendDataIndex);
+		sendMessageToAll(data, new ArrayList<String>(), Constants.LAST);
+		try {
+			clientSocket.close();
+		} catch (Exception e) {
+			logger.error(e);
+		}
+	}
+
 	public void rdtSend(byte[] dataToSend) {
+		logger.info("rdtSend() called with size " + dataToSend.length);
 		//Add logic for filling the buffer and send it.
 		int length = dataToSend.length;
 		int space;
@@ -53,7 +69,7 @@ public class Client {
 		int sendIndex = 0;
 
 		while (length > 0) {
-
+			logger.info("rdtSend() length " + length);
 			space = mss - sendDataIndex;
 			dataSentSize = Math.min(length, space);
 
@@ -64,7 +80,8 @@ public class Client {
 			length = length - dataSentSize;
 			//TODO Remove true
 			if (sendDataIndex == mss || true) {
-				sendMessageToAll(sendData);
+				sendMessageToAll(sendData, new ArrayList<String>(), Constants.DATA);
+				ackNum++;
 				//need to optimize this
 				sendDataIndex = 0;
 			}
@@ -72,15 +89,35 @@ public class Client {
 
 	}
 
-	public void sendMessageToAll(byte[] data) {
-		Message mssg = new Message(100, (short) 1, data);
+	public void sendMessageToAll(byte[] data, List<String> ackReceived, short mssgType) {
+		Message mssg = new Message(ackNum, mssgType, data);
 		for (String serverIp : serverIpList) {
-			Thread t;
+			//If ack has alerady not been received
+			if (!ackReceived.contains(serverIp)) {
+				Thread t;
+				try {
+					t = new Thread(new SenderThread(serverPort, serverIp, clientSocket, mssg.getBytes()));
+					t.start();
+				} catch (UnknownHostException e) {
+					logger.info(e);
+				}
+			}
+		}
+		//Code to receive Acks
+		byte[] ackData = new byte[1024];
+		while (true) {
+			DatagramPacket receivePacket = new DatagramPacket(ackData, ackData.length);
 			try {
-				t = new Thread(new SenderThread(serverPort, serverIp, clientSocket, mssg.getBytes()));
-				t.start();
-			} catch (UnknownHostException e) {
-				logger.info(e);
+				clientSocket.receive(receivePacket);
+				Message recvAck = new Message(receivePacket.getData());
+				int recvAckNum = recvAck.getSeqNum();
+				if (ackNum == recvAckNum) {
+					ackReceived.add(receivePacket.getAddress().getHostAddress());
+				}
+				System.out.println("Ack Received for seq# " + recvAck.getSeqNum());
+				break;
+			} catch (IOException e) {
+				logger.error(e);
 			}
 		}
 	}

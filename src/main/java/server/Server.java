@@ -1,5 +1,7 @@
 package server;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -9,7 +11,7 @@ import java.util.Random;
 
 import org.apache.log4j.Logger;
 
-import util.Acknowledge;
+import util.Constants;
 import util.Message;
 
 public class Server {
@@ -31,41 +33,54 @@ public class Server {
 
 	public void listen() throws IOException {
 		float randomNumber;
-		while (true) {
-			DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-			try {
-				serverSocket.receive(receivePacket);
-			} catch (IOException e) {
-				logger.error(e);
-				throw e;
-			}
-			Message recvMessage = new Message(receivePacket.getData());
-			int seqNumber = recvMessage.getSeqNum();
-			randomNumber = new Random().nextFloat();
-			if (randomNumber <= inputProbability) {
-				logger.info("Packet " + seqNumber + " dropped.");
-				continue;
-			} else {
+		//Open the file to write
+		try (BufferedWriter bw = new BufferedWriter(new FileWriter(fileToWrite, false))) {
+
+			while (true) {
+				logger.info("Waiting to receive a packet");
+				DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+				try {
+					serverSocket.receive(receivePacket);
+				} catch (IOException e) {
+					logger.error(e);
+					throw e;
+				}
+				Message recvMessage = new Message(receivePacket.getData());
+				String data = new String(recvMessage.getData());
+				bw.write(data);
+				logger.info(recvMessage);
+				int seqNumber = recvMessage.getSeqNum();
+				randomNumber = new Random().nextFloat();
+				//boolean toDrop = randomNumber <= inputProbability;
+				boolean toDrop = false;
+				if (toDrop) {
+					logger.info("Packet " + seqNumber + " dropped.");
+					continue;
+				}
+
 				logger.info("Packet " + seqNumber + " received.");
+				InetAddress senderIP = receivePacket.getAddress();
+				int senderPort = receivePacket.getPort();
+				boolean isAckSent = sendAck(senderIP, senderPort, seqNumber);
+				if (isAckSent) {
+					logger.info("Ack for packet " + seqNumber + " sent");
+				}
+				// FileUtil.saveToFile(sentence, fileToWrite);
 			}
-			InetAddress senderIP = receivePacket.getAddress();
-			int senderPort = receivePacket.getPort();
-			boolean isAckSent = sendAck(senderIP, senderPort, seqNumber);
-			if (isAckSent) {
-				logger.info("Ack for packet " + seqNumber + "sent");
-			}
-			// FileUtil.saveToFile(sentence, fileToWrite);
+
+		} catch (Exception e) {
+			logger.error(e);
 		}
 	}
 
 	private boolean sendAck(InetAddress senderIP, int senderPort, int seqNumber) {
-		Acknowledge ack = new Acknowledge(seqNumber);
+		Message ack = new Message(seqNumber, Constants.ACK, new byte[0]);
 		DatagramPacket ackPacket = new DatagramPacket(ack.getBytes(), ack.getBytes().length, senderIP, senderPort);
 		try {
 			serverSocket.send(ackPacket);
 			return true;
 		} catch (Exception e) {
-			e.printStackTrace();
+			logger.error(e);
 			return false;
 		}
 	}

@@ -68,4 +68,11 @@ public class Message {
 		System.arraycopy(data, 0, result, 8, data.length);
 		return result;
 	}
+
+	@Override
+	public String toString() {
+		// TODO Auto-generated method stub
+		return "\nSEQ: " + seqNum + "\nData: " + new String(data) + " \nType: " + type;
+	}
+
 }
