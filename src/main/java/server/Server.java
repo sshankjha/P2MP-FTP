@@ -18,21 +18,22 @@ public class Server {
 
 	static Logger logger = Logger.getLogger(Server.class);
 	private int serverPort;
-	private float inputProbability;
+	private int inputProbability;//out of 100
 	private DatagramSocket serverSocket;
 	private byte[] receiveData;
 	private String fileToWrite;
+	private int currentAck = 0;
 
 	public Server(int serverPort, float inputProbability, String fileToWrite) throws SocketException {
 		super();
 		this.serverPort = serverPort;
-		this.inputProbability = inputProbability;
+		this.inputProbability = (int) (inputProbability * 100);
 		this.fileToWrite = fileToWrite;
-		serverSocket = new DatagramSocket(serverPort);
+		serverSocket = new DatagramSocket(this.serverPort);
 	}
 
 	public void listen() throws IOException {
-		float randomNumber;
+		int randomNumber;
 		//Open the file to write
 		try (BufferedWriter bw = new BufferedWriter(new FileWriter(fileToWrite, false))) {
 
@@ -48,7 +49,7 @@ public class Server {
 				Message recvMessage = new Message(receivePacket.getData());
 				String data = new String(recvMessage.getData());
 				int seqNumber = recvMessage.getSeqNum();
-				randomNumber = new Random().nextFloat();
+				randomNumber = new Random().nextInt(100) + 1;
 				boolean toDrop = randomNumber <= inputProbability;
 				//boolean toDrop = false;
 				if (toDrop) {
@@ -57,8 +58,13 @@ public class Server {
 				}
 
 				logger.info("Packet " + seqNumber + " received.");
-				bw.write(data);
 				logger.info(recvMessage);
+				//Only write if the packet is has the expected seq number.
+				if (currentAck == seqNumber) {
+					bw.write(data);
+					currentAck++;
+				}
+
 				InetAddress senderIP = receivePacket.getAddress();
 				int senderPort = receivePacket.getPort();
 				boolean isAckSent = sendAck(senderIP, senderPort, seqNumber);
@@ -68,7 +74,6 @@ public class Server {
 				if (recvMessage.getType() == Constants.LAST) {
 					break;
 				}
-				// FileUtil.saveToFile(sentence, fileToWrite);
 			}
 
 		} catch (Exception e) {

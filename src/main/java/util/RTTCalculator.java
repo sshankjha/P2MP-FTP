@@ -7,9 +7,11 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import server.Server;
+
 public class RTTCalculator {
 
-	Logger logger = Logger.getLogger(this.getClass());
+	static Logger logger = Logger.getLogger(RTTCalculator.class);
 
 	/**
 	 * Calculates RTT for all the receivers and returns the value in ms.
@@ -18,11 +20,11 @@ public class RTTCalculator {
 	 *            array of hostnames
 	 * @return maximum RTT among all the RTTs
 	 */
-	public long getRTT(String[] receivers) {
-		int countForPing = 3;
-		List<Long> rttForAllReceivers = new ArrayList<Long>();
+	public static long getRTT(String[] receivers) {
+		Double countForPing = 3.0;
+		List<Double> rttForAllReceivers = new ArrayList<Double>();
 		for (String receiver : receivers) {
-			long totalTime = 0;
+			double totalTime = 0;
 			for (int i = 0; i < countForPing; i++) {
 				try {
 					InetAddress inetAddress = InetAddress.getByName(receiver);
@@ -39,8 +41,7 @@ public class RTTCalculator {
 			logger.info("Average RTT for " + receiver + ": " + totalTime / countForPing + " ms");
 			rttForAllReceivers.add(totalTime / countForPing);
 		}
-		long maxRTT = Collections.max(rttForAllReceivers);
-		logger.info("Returning max RTT: " + maxRTT + " ms");
-		return maxRTT;
+		Double maxRTT = Collections.max(rttForAllReceivers);
+		return new Double((maxRTT + 5) * 1.3).longValue();
 	}
 }

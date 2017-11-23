@@ -19,6 +19,7 @@ import org.apache.log4j.Logger;
 
 import util.Constants;
 import util.Message;
+import util.RTTCalculator;
 
 public class Client {
 	final static Logger logger = Logger.getLogger(Client.class);
@@ -29,16 +30,17 @@ public class Client {
 	private int mss;
 	private int serverPort;
 	private List<String> serverIpList;
-	private int rtt;
+	private long rtt;
 	private int ackNum = 0;
 
 	public Client(String fileName, int mss, List<String> serverIpList) throws SocketException {
 		this(fileName, Constants.SERVER_PORT, mss, serverIpList);
-
 	}
 
 	public Client(String fileName, int serverPort, int mss, List<String> serverIpList) throws SocketException {
 		this.fileName = fileName;
+		rtt = RTTCalculator.getRTT(serverIpList.toArray(new String[0]));
+		logger.info("Selected RTT value is : " + rtt + " ms");
 		if (mss < 0 || mss > 1500) {
 			throw new IllegalStateException("Incorrect value for MSS");
 		}
@@ -107,7 +109,7 @@ public class Client {
 
 	private void startTimer(Future<Void> future, byte[] data, List<String> ackReceived, short mssgType, int ackNum) {
 		try {
-			future.get(100, TimeUnit.MILLISECONDS);
+			future.get(rtt, TimeUnit.MILLISECONDS);
 		} catch (TimeoutException e) {
 			//future.cancel(true);
 			if (ackReceived.size() != serverIpList.size()) {
