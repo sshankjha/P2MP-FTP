@@ -37,7 +37,6 @@ public class Server {
 		try (BufferedWriter bw = new BufferedWriter(new FileWriter(fileToWrite, false))) {
 
 			while (true) {
-				logger.info("Waiting to receive a packet");
 				receiveData = new byte[1500];
 				DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
 				try {
@@ -48,18 +47,18 @@ public class Server {
 				}
 				Message recvMessage = new Message(receivePacket.getData());
 				String data = new String(recvMessage.getData());
-				bw.write(data);
-				logger.info(recvMessage);
 				int seqNumber = recvMessage.getSeqNum();
 				randomNumber = new Random().nextFloat();
-				//boolean toDrop = randomNumber <= inputProbability;
-				boolean toDrop = false;
+				boolean toDrop = randomNumber <= inputProbability;
+				//boolean toDrop = false;
 				if (toDrop) {
 					logger.info("Packet " + seqNumber + " dropped.");
 					continue;
 				}
 
 				logger.info("Packet " + seqNumber + " received.");
+				bw.write(data);
+				logger.info(recvMessage);
 				InetAddress senderIP = receivePacket.getAddress();
 				int senderPort = receivePacket.getPort();
 				boolean isAckSent = sendAck(senderIP, senderPort, seqNumber);

@@ -60,7 +60,7 @@ public class Client {
 		logger.info("Calling connection.close( )" + sendDataIndex);
 		byte[] data = new byte[sendDataIndex];
 		System.arraycopy(sendData, 0, data, 0, sendDataIndex);
-		sendMessageToAll(data, new ArrayList<String>(), Constants.LAST);
+		sendMessageToAll(data, new ArrayList<String>(), Constants.LAST, ackNum);
 		try {
 			clientSocket.close();
 		} catch (Exception e) {
@@ -85,7 +85,14 @@ public class Client {
 			sendIndex += dataSentSize;
 			length = length - dataSentSize;
 			if (sendDataIndex == mss) {
-				sendMessageToAll(sendData, new ArrayList<String>(), Constants.DATA);
+				ExecutorService executor = Executors.newSingleThreadExecutor();
+				logger.info("Sent packet " + this.ackNum);
+				List<String> ackReceived = new ArrayList<String>();
+				sendMessageToAll(sendData, ackReceived, Constants.DATA, ackNum);
+				//Submit timer
+				Future<Void> future = executor.submit(new Task(clientSocket, ackNum, ackReceived, serverIpList));
+				startTimer(future, sendData, ackReceived, Constants.DATA, ackNum);
+				executor.shutdownNow();
 				ackNum++;
 				//need to optimize this
 				sendDataIndex = 0;
@@ -94,7 +101,24 @@ public class Client {
 
 	}
 
-	public void sendMessageToAll(byte[] data, List<String> ackReceived, short mssgType) {
+	private void startTimer(Future<Void> future, byte[] data, List<String> ackReceived, short mssgType, int ackNum) {
+		try {
+			future.get(1000, TimeUnit.MILLISECONDS);
+		} catch (TimeoutException e) {
+			//future.cancel(true);
+			if (ackReceived.size() != serverIpList.size()) {
+				logger.error("Timout Occured for packet " + ackNum + " - Trying to resend");
+				sendMessageToAll(data, ackReceived, mssgType, ackNum);
+				startTimer(future, data, ackReceived, mssgType, ackNum);
+			}
+		} catch (InterruptedException e) {
+			logger.error(e);
+		} catch (ExecutionException e) {
+			logger.error(e);
+		}
+	}
+
+	private void sendMessageToAll(byte[] data, List<String> ackReceived, short mssgType, int ackNum) {
 		Message mssg = new Message(ackNum, mssgType, data);
 		for (String serverIp : serverIpList) {
 			//If ack has alerady not been received
@@ -108,54 +132,45 @@ public class Client {
 				}
 			}
 		}
-		ExecutorService executor = Executors.newSingleThreadExecutor();
-		Future<Void> future = executor.submit(new Task(clientSocket, ackNum, ackReceived));
-		try {
-			System.out.println("Started..");
-			future.get(10000, TimeUnit.MILLISECONDS);
-			System.out.println("Finished!");
-		} catch (TimeoutException e) {
-			future.cancel(true);
-			logger.error("Timout Occured - Trying to resend");
-			sendMessageToAll(data, ackReceived, mssgType);
-		} catch (InterruptedException e) {
-			logger.error(e);
-		} catch (ExecutionException e) {
-			logger.error(e);
-		}
-
-		executor.shutdownNow();
 	}
 
 }
 
 class Task implements Callable<Void> {
 	private DatagramSocket clientSocket;
-	private int ackNum;
-	List<String> ackReceived;
+	private int ackNumber;
+	List<String> ackReceivedList;
+	List<String> serverList;
 	final static Logger logger = Logger.getLogger(Task.class);
 
-	public Task(DatagramSocket clientSocket, int ackNum, List<String> ackReceived) {
+	public Task(DatagramSocket clientSocket, int ackNum, List<String> ackReceived, List<String> serverList) {
 		super();
 		this.clientSocket = clientSocket;
-		this.ackNum = ackNum;
-		this.ackReceived = ackReceived;
+		this.ackNumber = ackNum;
+		this.ackReceivedList = ackReceived;
+		this.serverList = serverList;
 	}
 
 	@Override
 	public Void call() throws Exception {
 		byte[] ackData = new byte[1024];
+		logger.error("");
 		while (!Thread.interrupted()) {
+			if (serverList.size() == ackReceivedList.size()) {
+				logger.info("Breaking from while loop");
+				break;
+			}
 			DatagramPacket receivePacket = new DatagramPacket(ackData, ackData.length);
 			try {
 				clientSocket.receive(receivePacket);
 				Message recvAck = new Message(receivePacket.getData());
 				int recvAckNum = recvAck.getSeqNum();
-				if (ackNum == recvAckNum) {
-					ackReceived.add(receivePacket.getAddress().getHostAddress());
+				if (ackNumber == recvAckNum) {
+					ackReceivedList.add(receivePacket.getAddress().getHostAddress());
 				}
-				System.out.println("Ack Received for seq# " + recvAck.getSeqNum());
-				break;
+				//Add check to break out of loop
+				logger.info("Ack for packet " + recvAckNum + " received, Expecting: " + ackNumber + " from "
+						+ receivePacket.getAddress().getHostAddress());
 			} catch (IOException e) {
 				logger.error(e);
 			}
