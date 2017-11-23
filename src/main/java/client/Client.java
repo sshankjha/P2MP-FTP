@@ -60,7 +60,8 @@ public class Client {
 		logger.info("Calling connection.close( )" + sendDataIndex);
 		byte[] data = new byte[sendDataIndex];
 		System.arraycopy(sendData, 0, data, 0, sendDataIndex);
-		sendMessageToAll(data, new ArrayList<String>(), Constants.LAST, ackNum);
+		sendReliable(data, Constants.LAST);
+		//sendMessageToAll(data, new ArrayList<String>(), Constants.LAST, ackNum);
 		try {
 			clientSocket.close();
 		} catch (Exception e) {
@@ -85,25 +86,28 @@ public class Client {
 			sendIndex += dataSentSize;
 			length = length - dataSentSize;
 			if (sendDataIndex == mss) {
-				ExecutorService executor = Executors.newSingleThreadExecutor();
-				logger.info("Sent packet " + this.ackNum);
-				List<String> ackReceived = new ArrayList<String>();
-				sendMessageToAll(sendData, ackReceived, Constants.DATA, ackNum);
-				//Submit timer
-				Future<Void> future = executor.submit(new Task(clientSocket, ackNum, ackReceived, serverIpList));
-				startTimer(future, sendData, ackReceived, Constants.DATA, ackNum);
-				executor.shutdownNow();
+				sendReliable(sendData, Constants.DATA);
 				ackNum++;
-				//need to optimize this
 				sendDataIndex = 0;
 			}
 		}
 
 	}
 
+	private void sendReliable(byte[] data, short mssgType) {
+		logger.info("Sent packet " + this.ackNum);
+		ExecutorService executor = Executors.newSingleThreadExecutor();
+		List<String> ackReceived = new ArrayList<String>();
+		sendMessageToAll(data, ackReceived, mssgType, ackNum);
+		//Submit timer
+		Future<Void> future = executor.submit(new Task(clientSocket, ackNum, ackReceived, serverIpList));
+		startTimer(future, data, ackReceived, mssgType, ackNum);
+		executor.shutdownNow();
+	}
+
 	private void startTimer(Future<Void> future, byte[] data, List<String> ackReceived, short mssgType, int ackNum) {
 		try {
-			future.get(1000, TimeUnit.MILLISECONDS);
+			future.get(100, TimeUnit.MILLISECONDS);
 		} catch (TimeoutException e) {
 			//future.cancel(true);
 			if (ackReceived.size() != serverIpList.size()) {
