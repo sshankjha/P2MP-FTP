@@ -6,8 +6,14 @@ import java.net.DatagramSocket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.apache.log4j.Logger;
 
@@ -54,7 +60,6 @@ public class Client {
 		logger.info("Calling connection.close( )" + sendDataIndex);
 		byte[] data = new byte[sendDataIndex];
 		System.arraycopy(sendData, 0, data, 0, sendDataIndex);
-		logger.info("Calling connection.close( )" + new String(data));
 		sendMessageToAll(data, new ArrayList<String>(), Constants.LAST);
 		try {
 			clientSocket.close();
@@ -103,9 +108,44 @@ public class Client {
 				}
 			}
 		}
-		//Code to receive Acks
+		ExecutorService executor = Executors.newSingleThreadExecutor();
+		Future<Void> future = executor.submit(new Task(clientSocket, ackNum, ackReceived));
+		try {
+			System.out.println("Started..");
+			future.get(10000, TimeUnit.MILLISECONDS);
+			System.out.println("Finished!");
+		} catch (TimeoutException e) {
+			future.cancel(true);
+			logger.error("Timout Occured - Trying to resend");
+			sendMessageToAll(data, ackReceived, mssgType);
+		} catch (InterruptedException e) {
+			logger.error(e);
+		} catch (ExecutionException e) {
+			logger.error(e);
+		}
+
+		executor.shutdownNow();
+	}
+
+}
+
+class Task implements Callable<Void> {
+	private DatagramSocket clientSocket;
+	private int ackNum;
+	List<String> ackReceived;
+	final static Logger logger = Logger.getLogger(Task.class);
+
+	public Task(DatagramSocket clientSocket, int ackNum, List<String> ackReceived) {
+		super();
+		this.clientSocket = clientSocket;
+		this.ackNum = ackNum;
+		this.ackReceived = ackReceived;
+	}
+
+	@Override
+	public Void call() throws Exception {
 		byte[] ackData = new byte[1024];
-		while (true) {
+		while (!Thread.interrupted()) {
 			DatagramPacket receivePacket = new DatagramPacket(ackData, ackData.length);
 			try {
 				clientSocket.receive(receivePacket);
@@ -120,6 +160,6 @@ public class Client {
 				logger.error(e);
 			}
 		}
+		return null;
 	}
-
 }

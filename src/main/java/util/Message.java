@@ -72,7 +72,7 @@ public class Message {
 	@Override
 	public String toString() {
 		// TODO Auto-generated method stub
-		return "\nSEQ: " + seqNum + "\nData: " + new String(data) + " \nType: " + type;
+		return "\nSEQ: " + seqNum + "\nData: " + new String(data).substring(0, 1) + " \nType: " + type;
 	}
 
 }
