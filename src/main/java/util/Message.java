@@ -1,6 +1,11 @@
 package util;
 
+import java.io.ByteArrayInputStream;
 import java.nio.ByteBuffer;
+import java.util.zip.Adler32;
+import java.util.zip.CheckedInputStream;
+
+import org.apache.log4j.Logger;
 
 public class Message {
 
@@ -33,15 +38,29 @@ public class Message {
 	}
 
 	private short calculateChecksum() {
-		//Todo calculate checksum over rest of the fields maybe pass other parameters in byte
-		return (short) 123;
+		long value = 0;
+		short valueToReturn = 0;
+		try {
+			ByteArrayInputStream bais = new ByteArrayInputStream(this.data);
+			CheckedInputStream cis = new CheckedInputStream(bais, new Adler32());
+			byte readBuffer[] = new byte[this.data.length];
+			while (cis.read(readBuffer) >= 0) {
+				value = cis.getChecksum().getValue();
+				//System.out.println("The value of checksum is " + value);
+				valueToReturn = (short) (value % Short.MAX_VALUE);
+				//System.out.println("The short value of checksum is " + valueToReturn);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return valueToReturn;
 	}
 
 	public int getSeqNum() {
 		return seqNum;
 	}
 
-	public short getCheksum() {
+	public short getChecksum() {
 		return checksum;
 	}
 
@@ -71,8 +90,7 @@ public class Message {
 
 	@Override
 	public String toString() {
-		// TODO Auto-generated method stub
-		return "\nSEQ: " + seqNum + "\nData: " + new String(data).substring(0, 1) + " \nType: " + type;
+		return "\nSEQ: " + seqNum + "\nData: " + new String(data) + " \nType: " + type;
 	}
 
 }
