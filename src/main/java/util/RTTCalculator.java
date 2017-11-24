@@ -7,8 +7,6 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import server.Server;
-
 public class RTTCalculator {
 
 	static Logger logger = Logger.getLogger(RTTCalculator.class);
@@ -42,6 +40,6 @@ public class RTTCalculator {
 			rttForAllReceivers.add(totalTime / countForPing);
 		}
 		Double maxRTT = Collections.max(rttForAllReceivers);
-		return new Double((maxRTT + 5) * 1.3).longValue();
+		return new Double((maxRTT + 2) * 1.3).longValue();
 	}
 }

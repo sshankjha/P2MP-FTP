@@ -1,10 +1,10 @@
 package main;
 
-import java.io.File;
+import java.io.BufferedInputStream;
+import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.SocketException;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,7 +35,6 @@ public class P2mpclient {
 		}
 		serverPort = Integer.parseInt(args[args.length - 3]);
 		fileName = args[args.length - 2];
-		Path file = new File(fileName).toPath();
 		mss = Integer.parseInt(args[args.length - 1]);
 		//Parsing command line arguments - End
 
@@ -43,19 +42,17 @@ public class P2mpclient {
 			client = new Client(fileName, serverPort, mss, serverIpList);
 
 			//Reading the file contents and sending it - Start
-			try (FileInputStream buf = new FileInputStream(fileName)) {
-				byte[] ch = new byte[1];
-				while (buf.read(ch) != -1) {
-					client.rdtSend(ch);
+			try (DataInputStream buf = new DataInputStream(new BufferedInputStream(new FileInputStream(fileName)))) {
+				int r;
+				while ((r = buf.read()) != -1) {
+					byte[] dat = new byte[1];
+					dat[0] = (byte) (r);
+					client.rdtSend(dat);
 				}
-				//for (String line : (Iterable<String>) lines::iterator) {
-				//}
 			} catch (IOException e1) {
 				logger.info(e1);
 			}
 			client.close();
-			//Reading the file contents and sending it - End
-			//client.rdtSend("hello".getBytes());
 		} catch (SocketException e) {
 			logger.error(e);
 		}

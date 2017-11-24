@@ -126,6 +126,7 @@ public class Client {
 
 	private void sendMessageToAll(byte[] data, List<String> ackReceived, short mssgType, int ackNum) {
 		Message mssg = new Message(ackNum, mssgType, data);
+		logger.info("Sending number " + mssg.getBytes().length + " of bytes");
 		for (String serverIp : serverIpList) {
 			//If ack has alerady not been received
 			if (!ackReceived.contains(serverIp)) {
@@ -169,7 +170,7 @@ class Task implements Callable<Void> {
 			DatagramPacket receivePacket = new DatagramPacket(ackData, ackData.length);
 			try {
 				clientSocket.receive(receivePacket);
-				Message recvAck = new Message(receivePacket.getData());
+				Message recvAck = new Message(receivePacket.getData(), receivePacket.getLength());
 				int recvAckNum = recvAck.getSeqNum();
 				if (ackNumber == recvAckNum) {
 					ackReceivedList.add(receivePacket.getAddress().getHostAddress());

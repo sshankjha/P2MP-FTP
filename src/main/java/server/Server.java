@@ -1,7 +1,8 @@
 package server;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
+import java.io.BufferedOutputStream;
+import java.io.DataOutputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -34,35 +35,34 @@ public class Server {
 
 	public void listen() throws IOException {
 		int randomNumber;
-		//Open the file to write
-		try (BufferedWriter bw = new BufferedWriter(new FileWriter(fileToWrite, false))) {
-
+		try (DataOutputStream bw = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(fileToWrite)))) {
 			while (true) {
 				receiveData = new byte[1500];
-				DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+				int length = 1500;
+				DatagramPacket receivePacket = new DatagramPacket(receiveData, length);
 				try {
 					serverSocket.receive(receivePacket);
 				} catch (IOException e) {
 					logger.error(e);
 					throw e;
 				}
-				Message recvMessage = new Message(receivePacket.getData());
+				Message recvMessage = new Message(receivePacket.getData(), receivePacket.getLength());
 				String data = new String(recvMessage.getData());
 				int seqNumber = recvMessage.getSeqNum();
 				randomNumber = new Random().nextInt(100) + 1;
+				logger.info("Received Packet\n" + recvMessage);
 				boolean toDrop = randomNumber <= inputProbability;
-				//boolean toDrop = false;
 				if (toDrop) {
-					logger.info("Packet " + seqNumber + " dropped.");
+					logger.warn("Packet dropped.");
 					continue;
 				}
 
-				logger.info("Packet " + seqNumber + " received.");
-				logger.info(recvMessage);
 				//Only write if the packet is has the expected seq number.
 				if (currentAck == seqNumber) {
-					bw.write(data);
+					bw.write(data.getBytes());
 					currentAck++;
+				} else {
+					logger.warn("Unexpected Packet Received");
 				}
 
 				InetAddress senderIP = receivePacket.getAddress();

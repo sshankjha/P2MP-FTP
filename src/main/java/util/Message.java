@@ -5,8 +5,6 @@ import java.nio.ByteBuffer;
 import java.util.zip.Adler32;
 import java.util.zip.CheckedInputStream;
 
-import org.apache.log4j.Logger;
-
 public class Message {
 
 	private int seqNum;
@@ -14,7 +12,7 @@ public class Message {
 	private short type;
 	private byte[] data;
 
-	public Message(byte[] data) {
+	public Message(byte[] data, int length) {
 		super();
 		ByteBuffer seqNumBuffer = ByteBuffer.wrap(data, 0, 4);
 		this.seqNum = seqNumBuffer.getInt();
@@ -25,8 +23,8 @@ public class Message {
 		ByteBuffer checksumBuffer = ByteBuffer.wrap(data, 6, 2);
 		this.checksum = checksumBuffer.getShort();
 
-		this.data = new byte[data.length - 8];
-		System.arraycopy(data, 8, this.data, 0, data.length - 8);
+		this.data = new byte[length - 8];
+		System.arraycopy(data, 8, this.data, 0, length - 8);
 
 	}
 
