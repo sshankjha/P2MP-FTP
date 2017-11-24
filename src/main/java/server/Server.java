@@ -53,7 +53,7 @@ public class Server {
 				logger.debug("Received Packet\n" + recvMessage);
 				boolean toDrop = randomNumber <= inputProbability;
 				if (toDrop) {
-					logger.debug("Packet dropped.");
+					logger.error("Packet Loss, sequence number = " + seqNumber);
 					continue;
 				}
 
@@ -69,7 +69,7 @@ public class Server {
 				int senderPort = receivePacket.getPort();
 				boolean isAckSent = sendAck(senderIP, senderPort, seqNumber);
 				if (isAckSent) {
-					logger.info("Ack for packet " + seqNumber + " sent");
+					logger.debug("Ack for packet " + seqNumber + " sent");
 				}
 				if (recvMessage.getType() == Constants.LAST) {
 					break;

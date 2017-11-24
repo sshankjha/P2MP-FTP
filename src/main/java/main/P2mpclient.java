@@ -51,7 +51,7 @@ public class P2mpclient {
 					client.rdtSend(dat);
 				}
 			} catch (IOException e1) {
-				logger.info(e1);
+				logger.error(e1);
 			}
 			client.close();
 		} catch (SocketException e) {

@@ -97,7 +97,7 @@ public class Client {
 	}
 
 	private void sendReliable(byte[] data, short mssgType) {
-		logger.info("Sent packet " + this.ackNum);
+		logger.debug("Sent packet " + this.ackNum);
 		ExecutorService executor = Executors.newSingleThreadExecutor();
 		List<String> ackReceived = new ArrayList<String>();
 		sendMessageToAll(data, ackReceived, mssgType, ackNum);
@@ -113,7 +113,7 @@ public class Client {
 		} catch (TimeoutException e) {
 			//future.cancel(true);
 			if (ackReceived.size() != serverIpList.size()) {
-				logger.error("Timout Occured for packet " + ackNum + " - Trying to resend");
+				logger.error("Timeout sequence number " + ackNum);
 				sendMessageToAll(data, ackReceived, mssgType, ackNum);
 				startTimer(future, data, ackReceived, mssgType, ackNum);
 			}

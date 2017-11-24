@@ -13,14 +13,14 @@ public class P2mpserver {
 		float inputProbability;
 		String fileToWrite;
 		if (args.length != 3) {
-			logger.info("Incorrect number of arguments. Please check and try again");
+			logger.error("Incorrect number of arguments. Please check and try again");
 			System.exit(1);
 		}
 		serverPort = Integer.valueOf(args[0]);
 		fileToWrite = args[1];
 		inputProbability = Float.valueOf(args[2]);
 		if (inputProbability > 1 || inputProbability < 0) {
-			logger.info("Probability should be between 0 and 1. Exiting.");
+			logger.error("Probability should be between 0 and 1. Exiting.");
 			System.exit(1);
 		}
 		server = new Server(serverPort, inputProbability, fileToWrite);
