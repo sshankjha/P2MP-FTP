@@ -59,7 +59,7 @@ public class Client {
 
 	//Close the socket and send the remaining data
 	public void close() {
-		logger.info("Calling connection.close( )" + sendDataIndex);
+		logger.info("Calling connection.close() and sending data of size " + sendDataIndex);
 		byte[] data = new byte[sendDataIndex];
 		System.arraycopy(sendData, 0, data, 0, sendDataIndex);
 		sendReliable(data, Constants.LAST);
@@ -126,7 +126,6 @@ public class Client {
 
 	private void sendMessageToAll(byte[] data, List<String> ackReceived, short mssgType, int ackNum) {
 		Message mssg = new Message(ackNum, mssgType, data);
-		logger.info("Sending number " + mssg.getBytes().length + " of bytes");
 		for (String serverIp : serverIpList) {
 			//If ack has alerady not been received
 			if (!ackReceived.contains(serverIp)) {
@@ -135,7 +134,7 @@ public class Client {
 					t = new Thread(new SenderThread(serverPort, serverIp, clientSocket, mssg.getBytes()));
 					t.start();
 				} catch (UnknownHostException e) {
-					logger.info(e);
+					logger.error(e);
 				}
 			}
 		}
@@ -161,10 +160,8 @@ class Task implements Callable<Void> {
 	@Override
 	public Void call() throws Exception {
 		byte[] ackData = new byte[1024];
-		logger.error("");
 		while (!Thread.interrupted()) {
 			if (serverList.size() == ackReceivedList.size()) {
-				logger.info("Breaking from while loop");
 				break;
 			}
 			DatagramPacket receivePacket = new DatagramPacket(ackData, ackData.length);
@@ -176,7 +173,7 @@ class Task implements Callable<Void> {
 					ackReceivedList.add(receivePacket.getAddress().getHostAddress());
 				}
 				//Add check to break out of loop
-				logger.info("Ack for packet " + recvAckNum + " received, Expecting: " + ackNumber + " from "
+				logger.debug("Ack for packet " + recvAckNum + " received, Expecting: " + ackNumber + " from "
 						+ receivePacket.getAddress().getHostAddress());
 			} catch (IOException e) {
 				logger.error(e);

@@ -40,6 +40,6 @@ public class RTTCalculator {
 			rttForAllReceivers.add(totalTime / countForPing);
 		}
 		Double maxRTT = Collections.max(rttForAllReceivers);
-		return new Double((maxRTT + 2) * 1.3).longValue();
+		return new Double((maxRTT + 2) * 1.2).longValue();
 	}
 }

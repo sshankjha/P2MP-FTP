@@ -44,9 +44,7 @@ public class Message {
 			byte readBuffer[] = new byte[this.data.length];
 			while (cis.read(readBuffer) >= 0) {
 				value = cis.getChecksum().getValue();
-				//System.out.println("The value of checksum is " + value);
 				valueToReturn = (short) (value % Short.MAX_VALUE);
-				//System.out.println("The short value of checksum is " + valueToReturn);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();

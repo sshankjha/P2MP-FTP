@@ -50,10 +50,10 @@ public class Server {
 				String data = new String(recvMessage.getData());
 				int seqNumber = recvMessage.getSeqNum();
 				randomNumber = new Random().nextInt(100) + 1;
-				logger.info("Received Packet\n" + recvMessage);
+				logger.debug("Received Packet\n" + recvMessage);
 				boolean toDrop = randomNumber <= inputProbability;
 				if (toDrop) {
-					logger.warn("Packet dropped.");
+					logger.debug("Packet dropped.");
 					continue;
 				}
 
