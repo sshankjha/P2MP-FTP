@@ -37,7 +37,8 @@ public class P2mpclient {
 		fileName = args[args.length - 2];
 		mss = Integer.parseInt(args[args.length - 1]);
 		//Parsing command line arguments - End
-
+		//Calculating the time taken to transfer file to all servers.
+		long startTime = System.currentTimeMillis();
 		try {
 			client = new Client(fileName, serverPort, mss, serverIpList);
 
@@ -56,6 +57,6 @@ public class P2mpclient {
 		} catch (SocketException e) {
 			logger.error(e);
 		}
+		logger.info("Total time taken: ".toUpperCase() + (System.currentTimeMillis() - startTime));
 	}
-
 }
