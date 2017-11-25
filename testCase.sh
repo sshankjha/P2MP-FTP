@@ -1,37 +1,56 @@
+mvn package
+
 #Code to install maven
-array=( "159.203.129.188" "45.55.169.199" "45.55.154.214" "159.203.137.218" "159.203.129.119")
+ssh_key_loc="~/.ssh/id_rsa"
+ssh_user_name="root"
 
-#for ip in "${array[@]}"
-#do
-#	ssh -i ~/.ssh/id_rsa root@$ip 'apt-get update -y'
-#    ssh -i ~/.ssh/id_rsa root@$ip 'apt-get install -y default-jdk'
-#    ssh -i ~/.ssh/id_rsa root@$ip 'apt-get install -y maven'
-#done
+#ip_list="ip1 ip2 ip3"
+ip_list="138.197.22.178"
 
-#for ip in "${array[@]}"
-#do
-#	ssh -i ~/.ssh/id_rsa root@$ip 'killall java'
-#    ssh -i ~/.ssh/id_rsa root@$ip 'rm -rf code'
-#    ssh -i ~/.ssh/id_rsa root@$ip 'mkdir code'
-#    scp -i ~/.ssh/id_rsa ~/Desktop/ip_proj2/P2MP-FTP/target/P2MP-FTP-0.1-jar-with-dependencies.jar root@$ip:code/P2MP-FTP-0.1-jar-with-dependencies.jar
-#    scp -i ~/.ssh/id_rsa ~/Desktop/ip_proj2/P2MP-FTP/target/P2MP-FTP-0.1-jar-with-dependencies.jar root@$ip:code/P2MP-FTP-0.1-jar-with-dependencies.jar
-#    ssh -i ~/.ssh/id_rsa root@$ip 'cd code;java -cp P2MP-FTP-0.1-jar-with-dependencies.jar main/P2mpserver 7735 abcd 0.1' &
-#done
+#array=( "ip1" "ip2" "ip3")
+array=( "138.197.22.178")
+num_of_test_runs=1
+mss=1000
+loss_probablity=0.01
 
+echo "####################Installing Dependencies####################"
 
 for ip in "${array[@]}"
 do
-	ssh -i ~/.ssh/id_rsa root@$ip 'killall java'
-    ssh -i ~/.ssh/id_rsa root@$ip 'cd code;rm -rf abcd'
-    ssh -i ~/.ssh/id_rsa root@$ip 'cd code;java -cp P2MP-FTP-0.1-jar-with-dependencies.jar main/P2mpserver 7735 abcd 0.05' &
+	ssh -i $ssh_key_loc $ssh_user_name@$ip 'apt-get update -y'
+    ssh -i $ssh_key_loc $ssh_user_name@$ip 'apt-get install -y default-jdk'
+    ssh -i $ssh_key_loc $ssh_user_name@$ip 'apt-get install -y maven'
 done
 
+echo "####################Copying Binary/Executable####################"
+for ip in "${array[@]}"
+do
+	ssh -i $ssh_key_loc $ssh_user_name@$ip 'killall java'
+    ssh -i $ssh_key_loc $ssh_user_name@$ip 'rm -rf code'
+    ssh -i $ssh_key_loc $ssh_user_name@$ip 'mkdir code'
+    scp -i $ssh_key_loc ./target/P2MP-FTP-0.1-jar-with-dependencies.jar $ssh_user_name@$ip:code/P2MP-FTP-0.1-jar-with-dependencies.jar
+    scp -i $ssh_key_loc ./test.txt $ssh_user_name@$ip:code/test.txt
+done
+
+cp test.txt target/test.txt
 cd target
-killall java
-java -cp P2MP-FTP-0.1-jar-with-dependencies.jar main/P2mpclient 159.203.129.188 45.55.169.199 45.55.154.214 159.203.137.218 159.203.129.119 7735 abc.txt 500
+for (( i=1; i<=$num_of_test_runs; i++))
+	do
+		for ip in "${array[@]}"
+            do
+                echo "####################Stopping already running java processes on client " $ip " ####################"
+                ssh -i $ssh_key_loc $ssh_user_name@$ip 'killall java'
+                ssh -i $ssh_key_loc $ssh_user_name@$ip 'cd code;rm -rf testRecvd'
+                ssh -i $ssh_key_loc $ssh_user_name@$ip 'cd code;java -cp P2MP-FTP-0.1-jar-with-dependencies.jar main/P2mpserver 7735 testRecvd '"$loss_probablity"'' &
+            done
 
-for ip in "${array[@]}"
-do
-    ssh -i ~/.ssh/id_rsa root@$ip 'cd code;diff abc.txt abcd'
+            echo "####################Stopping already running java processes on client####################"
+            killall java
+            java -cp P2MP-FTP-0.1-jar-with-dependencies.jar main/P2mpclient $ip_list 7735 test.txt $mss > logs_$i.txt
+            for ip in "${array[@]}"
+            do
+                ssh -i $ssh_key_loc $ssh_user_name@$ip 'cd code;diff test.txt testRecvd' > file_diff_"$ip"_"$i".txt
+            done
 done
 
+echo "####################Test Finished####################"
