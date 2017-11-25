@@ -113,7 +113,7 @@ public class Client {
 		} catch (TimeoutException e) {
 			//future.cancel(true);
 			if (ackReceived.size() != serverIpList.size()) {
-				logger.error("Timeout sequence number " + ackNum);
+				logger.error("Timeout sequence number = " + ackNum);
 				sendMessageToAll(data, ackReceived, mssgType, ackNum);
 				startTimer(future, data, ackReceived, mssgType, ackNum);
 			}
