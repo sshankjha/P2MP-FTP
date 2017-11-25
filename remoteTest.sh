@@ -1,3 +1,4 @@
+#!/bin/bash
 mvn package
 
 #Code to install maven
