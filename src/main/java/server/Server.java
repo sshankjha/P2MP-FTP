@@ -12,6 +12,7 @@ import java.util.Random;
 
 import org.apache.log4j.Logger;
 
+import util.CheckSumCalculator;
 import util.Constants;
 import util.Message;
 
@@ -19,7 +20,7 @@ public class Server {
 
 	static Logger logger = Logger.getLogger(Server.class);
 	private int serverPort;
-	private int inputProbability;//out of 100
+	private int inputProbability;// out of 100
 	private DatagramSocket serverSocket;
 	private byte[] receiveData;
 	private String fileToWrite;
@@ -56,8 +57,11 @@ public class Server {
 					logger.error("Packet Loss, sequence number = " + seqNumber);
 					continue;
 				}
-
-				//Only write if the packet is has the expected seq number.
+				if (recvMessage.getChecksum() != CheckSumCalculator.calculate(data.getBytes())) {
+					logger.error("Messgae with incorrrect checksum received.");
+					continue;
+				}
+				// Only write if the packet is has the expected seq number.
 				if (currentAck == seqNumber) {
 					bw.write(data.getBytes());
 					currentAck++;

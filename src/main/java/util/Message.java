@@ -1,9 +1,6 @@
 package util;
 
-import java.io.ByteArrayInputStream;
 import java.nio.ByteBuffer;
-import java.util.zip.Adler32;
-import java.util.zip.CheckedInputStream;
 
 public class Message {
 
@@ -35,22 +32,7 @@ public class Message {
 		this.data = data;
 	}
 
-	private short calculateChecksum() {
-		long value = 0;
-		short valueToReturn = 0;
-		try {
-			ByteArrayInputStream bais = new ByteArrayInputStream(this.data);
-			CheckedInputStream cis = new CheckedInputStream(bais, new Adler32());
-			byte readBuffer[] = new byte[this.data.length];
-			while (cis.read(readBuffer) >= 0) {
-				value = cis.getChecksum().getValue();
-				valueToReturn = (short) (value % Short.MAX_VALUE);
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return valueToReturn;
-	}
+	
 
 	public int getSeqNum() {
 		return seqNum;
@@ -76,7 +58,7 @@ public class Message {
 		byte[] typeBytes = ByteBuffer.allocate(2).putShort(type).array();
 		System.arraycopy(typeBytes, 0, result, 4, 2);
 
-		this.checksum = calculateChecksum();
+		this.checksum = CheckSumCalculator.calculate(this.data);
 		byte[] checksumBytes = ByteBuffer.allocate(2).putShort(checksum).array();
 		System.arraycopy(checksumBytes, 0, result, 6, 2);
 
