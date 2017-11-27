@@ -1,2 +1,6 @@
 # P2MP-FTP
-Point-to-multipoint reliable data transfer protocol using the Stop-and-Wait automatic repeat request (ARQ) scheme.
+Point-to-multipoint reliable data transfer protocol using the Stop-and-Wait automatic repeat request (ARQ) scheme.  
+The FTP protocol provides a sophisticated file transfer service, but since it uses TCP to ensure reliable data transmission it only supports the transfer of files from one sender to one receiver.  
+The P2MP-FTP client will play the role of the sender that connects to a set of of P2MP-FTP servers that play the role of the receivers in the reliable data transfer. All data transfer is from sender (client) to receivers (servers).  
+The client also implements the sending side of the reliable Stop-and-Wait protocol, receiving data from rdt send(), buffering the data locally, and ensuring that the data is received correctly at the server.  
+The client transmits each segment separately to each of the receivers, and waits until it has received ACKs from every receiver before it can transmit the next segment. Every time a segment is transmitted, the sender sets a timeout counter. If the counter expires before ACKs from all receivers have been received, then the sender re-transmits the segment, but only to those receivers from which it has not received an ACK yet. This process repeats until all ACKs have been received (i.e., if there are n receivers, n ACKS, one from each receiver have arrived at the sender), at which time the sender proceeds to transmit the next segment.  
